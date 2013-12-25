@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace GossipNet.Console
 {
@@ -11,9 +13,15 @@ namespace GossipNet.Console
     {
         static void Main(string[] args)
         {
+            if(Debugger.IsAttached)
+            {
+                // running inside VS
+                args = new[] { "20000", "30000" };
+            }
+
             if (args.Length == 0)
             {
-                args = new[] { "20000" };
+                args = new[] { "30000" };
             }
 
             var port = int.Parse(args[0]);
@@ -26,6 +34,10 @@ namespace GossipNet.Console
             var config = GossipNodeConfiguration.Create(x =>
             {
                 x.LocalEndPoint = new IPEndPoint(IPAddress.Loopback, port);
+                x.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Verbose()
+                    .WriteTo.ColoredConsole()
+                    .CreateLogger();
             });
 
             var node = new GossipNode(config);

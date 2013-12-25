@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace GossipNet
 {
-    internal class GossipUdpListener
+    internal class GossipUdpClient
     {
         private readonly UdpClient _client;
         private readonly Action<IPEndPoint, byte[]> _onReceive;
         private bool _closed;
 
-        public GossipUdpListener(IPEndPoint localEndPoint, Action<IPEndPoint, byte[]> onReceive)
+        public GossipUdpClient(IPEndPoint localEndPoint, Action<IPEndPoint, byte[]> onReceive)
         {
             Debug.Assert(localEndPoint != null);
             Debug.Assert(onReceive != null);
@@ -33,6 +33,11 @@ namespace GossipNet
         public void Open()
         {
             _client.BeginReceive(Receive, null);
+        }
+
+        public void Send(IPEndPoint remoteEndPoint, byte[] bytes)
+        {
+            _client.Send(bytes, bytes.Length, remoteEndPoint);
         }
 
         private void Receive(IAsyncResult ar)
