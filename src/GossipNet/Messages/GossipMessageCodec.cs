@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Messages
 {
-    public class GossipMessageEncoderDecoder : IGossipMessageEncoder, IGossipMessageDecoder
+    public class GossipMessageCodec : IGossipMessageEncoder, IGossipMessageDecoder
     {
         public GossipMessage Decode(Stream stream)
         {
@@ -35,6 +35,12 @@ namespace GossipNet.Messages
         {
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
+                if(message.MessageType == GossipMessageType.Raw)
+                {
+                    writer.Write(((RawMessage)message).Bytes);
+                    return;
+                }
+
                 writer.Write((byte)message.MessageType);
                 switch (message.MessageType)
                 {
@@ -55,7 +61,7 @@ namespace GossipNet.Messages
 
         private AckMessage DecodeAck(BinaryReader reader)
         {
-            var sequenceNumber = reader.ReadUInt32();
+            var sequenceNumber = reader.ReadInt32();
             return new AckMessage(sequenceNumber);
         }
 
@@ -72,14 +78,14 @@ namespace GossipNet.Messages
             {
                 meta = reader.ReadBytes(metaLength);
             }
-            var incarnation = reader.ReadUInt32();
+            var incarnation = reader.ReadInt32();
 
             return new AliveMessage(name, ipEndPoint, meta, incarnation);
         }
 
         private PingMessage DecodePing(BinaryReader reader)
         {
-            var sequenceNumber = reader.ReadUInt32();
+            var sequenceNumber = reader.ReadInt32();
             return new PingMessage(sequenceNumber);
         }
 
@@ -95,10 +101,10 @@ namespace GossipNet.Messages
             writer.Write(ipAddressBytes.Length);
             writer.Write(ipAddressBytes);
             writer.Write(message.IPEndPoint.Port);
-            writer.Write(message.Meta == null ? 0 : message.Meta.Length);
-            if(message.Meta != null && message.Meta.Length > 0)
+            writer.Write(message.Metadata == null ? 0 : message.Metadata.Length);
+            if(message.Metadata != null && message.Metadata.Length > 0)
             {
-                writer.Write(message.Meta);
+                writer.Write(message.Metadata);
             }
             writer.Write(message.Incarnation);
         }

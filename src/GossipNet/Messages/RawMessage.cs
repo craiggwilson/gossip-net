@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Messages
 {
-    public class PingMessage : GossipMessage
+    public class RawMessage : GossipMessage
     {
-        public PingMessage(int sequenceNumber)
+        public RawMessage(byte[] bytes)
         {
-            SequenceNumber = sequenceNumber;
+            Bytes = bytes;
         }
 
         public override GossipMessageType MessageType
         {
-            get { return GossipMessageType.Ping; }
+            get { return GossipMessageType.Raw; }
         }
 
-        public int SequenceNumber { get; private set; }
+        public byte[] Bytes { get; private set; }
     }
 }

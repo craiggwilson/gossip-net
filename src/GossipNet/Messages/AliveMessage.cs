@@ -7,20 +7,20 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Messages
 {
-    public class AliveMessage : GossipMessage
+    public class AliveMessage : BroadcastableMessage
     {
         public AliveMessage(string name,
             IPEndPoint ipEndPoint,
-            byte[] meta,
-            uint incarnation)
+            byte[] metadata,
+            int incarnation)
         {
             Name = name;
             IPEndPoint = ipEndPoint;
-            Meta = meta;
+            Metadata = metadata;
             Incarnation = incarnation;
         }
 
-        public uint Incarnation { get; private set; }
+        public int Incarnation { get; private set; }
 
         public IPEndPoint IPEndPoint { get; private set; }
 
@@ -29,8 +29,19 @@ namespace GossipNet.Messages
             get { return GossipMessageType.Alive; }
         }
 
-        public byte[] Meta { get; private set; }
+        public byte[] Metadata { get; private set; }
 
         public string Name { get; private set; }
+
+        public override bool Invalidates(BroadcastableMessage other)
+        {
+            switch(other.MessageType)
+            {
+                case GossipMessageType.Alive:
+                    return ((AliveMessage)other).Name == Name;
+                default:
+                    return false;
+            }
+        }
     }
 }

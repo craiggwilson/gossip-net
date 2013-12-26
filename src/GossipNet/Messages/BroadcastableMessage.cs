@@ -6,13 +6,8 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Messages
 {
-    public enum GossipMessageType : byte
+    public abstract class BroadcastableMessage : GossipMessage
     {
-        Raw,
-        Ping,
-        Ack,
-        Alive,
-        Suspect,
-        Dead,
+        public abstract bool Invalidates(BroadcastableMessage other);
     }
-}   
+}

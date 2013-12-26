@@ -1,59 +1,106 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using GossipNet.IO;
+using GossipNet.Messages;
+using GossipNet.Support;
+using Serilog;
 
 namespace GossipNet
 {
     internal class GossipNodeCollection
     {
-        private readonly List<GossipNodeDescription> _list;
-        private readonly Dictionary<string, int> _map;
+        private readonly object _lock = new object();
+        private readonly ILogger _logger;
+        private readonly ListMap<string, TrackedGossipNode> _nodes;
         private readonly Random _random;
 
-        public GossipNodeCollection()
+        public GossipNodeCollection(ILogger logger)
         {
-            _list = new List<GossipNodeDescription>();
-            _map = new Dictionary<string, int>();
+            Debug.Assert(logger != null);
+
+            _logger = logger;
+            _nodes = new ListMap<string, TrackedGossipNode>(n => n.Name);
             _random = new Random();
         }
 
-        public GossipNodeDescription GetOrAdd(string name, Func<GossipNodeDescription> factory)
+        public event Action<GossipNode> NodeJoined;
+        public event Action<GossipNode> NodeLeft;
+
+        public void MarkNodeAsAlive(AliveMessage message)
         {
-            int index;
-            if (_map.TryGetValue(name, out index)) return _list[index];
-
-            var desc = factory();
-
-            if(_list.Count == 0)
+            lock (_lock)
             {
-                // Get a random offset. This is important to ensure
-                // the failure detection bound is low on average. If all
-                // nodes did an append, failure detection bound would be
-                // very high.
-                var random = _random.Next(0, _list.Count);
-                var old = _list[random];
-                _list[random] = desc;
-                _map[desc.Name] = random;
-                _list.Add(old);
-                _map[old.Name] = _list.Count;
+                TrackedGossipNode node;
+                if (!_nodes.TryGetValue(message.Name, out node))
+                {
+                    node = new TrackedGossipNode(message.Name, message.IPEndPoint, message.Metadata)
+                    {
+                        Incarnation = int.MinValue,
+                        State = GossipNodeState.Dead,
+                        UpdatedAtUtc = DateTime.MinValue
+                    };
+
+                    if (_nodes.Count > 0)
+                    {
+                        int randomIndex = _random.Next(0, _nodes.Count - 1);
+                        var temp = _nodes[randomIndex];
+                        _nodes[randomIndex] = node;
+                        _nodes.Add(temp);
+                    }
+                    else
+                    {
+                        _nodes.Add(node);
+                    }
+                }
+
+                if (!node.IPEndPoint.Equals(message.IPEndPoint))
+                {
+                    _logger.Error("Conflicting endpoints for {Name}. Mine: {MyEndPoint} Theirs: {TheirEndPoint}", node.Name, node.IPEndPoint, message.IPEndPoint);
+                    return;
+                }
+
+                if (node.Incarnation >= message.Incarnation)
+                {
+                    _logger.Verbose("Received old incarnation alive request for {Name}. Mine: {MyIncarnation} Theirs: {TheirIncarnation}", node.Name, node.Incarnation, message.Incarnation);
+                    return;
+                }
+
+                var oldState = node.State;
+                node.State = GossipNodeState.Alive;
+                node.Incarnation = message.Incarnation;
+                node.UpdatedAtUtc = DateTime.UtcNow;
+
+                if(oldState == GossipNodeState.Dead)
+                {
+                    if(NodeJoined != null)
+                    {
+                        NodeJoined(node);
+                    }
+                }
             }
-
-            return desc;
         }
 
-        public void Update(GossipNodeDescription description)
+        public IReadOnlyList<GossipNode> AsReadOnly()
         {
-            int index;
-            if(!_map.TryGetValue(description.Name, out index)) throw new ArgumentOutOfRangeException("description");
-
-            _list[index] = description;
+            return _nodes.ToList().AsReadOnly();
         }
 
-        public IReadOnlyList<GossipNodeDescription> AsReadOnly()
+        private class TrackedGossipNode : GossipNode
         {
-            return _list.ToList().AsReadOnly();
+            public TrackedGossipNode(string name, IPEndPoint ipEndPoint, byte[] metadata)
+                : base(name, ipEndPoint, metadata)
+            { }
+
+            public int Incarnation { get; set; }
+
+            public GossipNodeState State { get; set; }
+
+            public DateTime UpdatedAtUtc { get; set; }
         }
     }
 }

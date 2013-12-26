@@ -47,17 +47,30 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GossipNodeConfiguration.cs" />
     <Compile Include="GossipNode.cs" />
+    <Compile Include="IO\Broadcast.cs" />
+    <Compile Include="IO\BroadcastQueue.cs" />
+    <Compile Include="LocalGossipNode.cs" />
+    <Compile Include="Messages\BroadcastableMessage.cs" />
+    <Compile Include="Messages\RawMessage.cs" />
+    <Compile Include="Messages\DeadMessage.cs" />
+    <Compile Include="Support\PriorityQueue.cs" />
+    <Compile Include="GossipNodeCollection.cs" />
+    <Compile Include="GossipNodeConfiguration.cs" />
+    <Compile Include="GossipNodeState.cs" />
+    <Compile Include="IO\IGossipMessageSender.cs" />
+    <Compile Include="IO\IGossipMessageReceiver.cs" />
+    <Compile Include="Messages\AliveMessage.cs" />
     <Compile Include="Messages\IGossipMessageDecoder.cs" />
     <Compile Include="Messages\IGossipMessageEncoder.cs" />
     <Compile Include="Messages\AckMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="GossipUdpClient.cs" />
+    <Compile Include="IO\GossipMessagePump.cs" />
     <Compile Include="Messages\GossipMessage.cs" />
-    <Compile Include="Messages\GossipMessageEncoderDecoder.cs" />
+    <Compile Include="Messages\GossipMessageCodec.cs" />
     <Compile Include="Messages\GossipMessageType.cs" />
     <Compile Include="Messages\PingMessage.cs" />
+    <Compile Include="Support\ListMap.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

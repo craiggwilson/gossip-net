@@ -35,19 +35,24 @@ namespace GossipNet.Console
             {
                 x.LocalEndPoint = new IPEndPoint(IPAddress.Loopback, port);
                 x.Logger = new LoggerConfiguration()
+                    .Destructure.AsScalar<IPEndPoint>()
                     .MinimumLevel.Verbose()
                     .WriteTo.ColoredConsole()
                     .CreateLogger();
             });
 
-            var node = new GossipNode(config);
+            var node = new LocalGossipNode(config);
+
+            node.NodeJoined += n => config.Logger.Information("{Name} joined cluster.", n.Name, n.IPEndPoint);
+            node.NodeLeft += n => config.Logger.Information("{Name} left cluster.", n.Name, n.IPEndPoint);
 
             if(joinPort != null)
             {
-                node.Join(new IPEndPoint(IPAddress.Loopback, joinPort.Value));
+                node.JoinCluster(new IPEndPoint(IPAddress.Loopback, joinPort.Value));
             }
 
             System.Console.ReadKey();
+            node.LeaveCluster();
             node.Dispose();
         }
     }

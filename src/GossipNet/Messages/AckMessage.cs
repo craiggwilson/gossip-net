@@ -8,7 +8,7 @@ namespace GossipNet.Messages
 {
     public class AckMessage : GossipMessage
     {
-        public AckMessage(uint sequenceNumber)
+        public AckMessage(int sequenceNumber)
         {
             SequenceNumber = sequenceNumber;
         }
@@ -18,6 +18,6 @@ namespace GossipNet.Messages
             get { return GossipMessageType.Ack; }
         }
 
-        public uint SequenceNumber { get; private set; }
+        public int SequenceNumber { get; private set; }
     }
 }
