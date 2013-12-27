@@ -25,6 +25,7 @@ namespace GossipNet.IO
         {
             var broadcasts = new List<Broadcast>();
             var itemsForRetransmit = new List<TrackedBroadcast>();
+            var retransmitCount = _retransmitCount();
             lock (_queueLock)
             {
                 int accumulatedBytes = 0;
@@ -35,7 +36,7 @@ namespace GossipNet.IO
                         var item = _queue.Dequeue();
                         broadcasts.Add(item.Broadcast);
                         accumulatedBytes += item.Broadcast.MessageBytes.Length + broadcastBytesOverhead;
-                        if(item.TransmitCount < _retransmitCount())
+                        if(item.TransmitCount < retransmitCount)
                         {
                             itemsForRetransmit.Add(item);
                         }

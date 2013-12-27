@@ -28,6 +28,18 @@ namespace GossipNet
             _random = new Random();
         }
 
+        public int Count
+        {
+            get
+            {
+                // TODO: optimize
+                lock(_lock)
+                {
+                    return _nodes.Count;
+                }
+            }
+        }
+
         public event Action<GossipNode> NodeJoined;
         public event Action<GossipNode> NodeLeft;
 
