@@ -12,21 +12,23 @@ using Serilog;
 
 namespace GossipNet.IO
 {
-    public class GossipMessagePump : IGossipMessageReceiver, IGossipMessageSender, IDisposable
+    internal class GossipMessagePump : IGossipMessageReceiver, IGossipMessageSender, IDisposable
     {
-        private readonly ILogger _logger;
+        private readonly GossipNodeConfiguration _configuration;
         private readonly IGossipMessageDecoder _messageDecoder;
         private readonly IGossipMessageEncoder _messageEncoder;
         private BroadcastQueue _broadcasts;
         private GossipUdpClient _client;
-        private IPEndPoint _localEndPoint;
 
-        public GossipMessagePump(IPEndPoint localEndPoint, IGossipMessageDecoder messageDecoder, IGossipMessageEncoder messageEncoder, ILogger logger)
+        public GossipMessagePump(GossipNodeConfiguration configuration, IGossipMessageDecoder messageDecoder, IGossipMessageEncoder messageEncoder)
         {
-            _localEndPoint = localEndPoint;
+            Debug.Assert(configuration != null);
+            Debug.Assert(messageDecoder != null);
+            Debug.Assert(messageEncoder!= null);
+
+            _configuration = configuration;
             _messageDecoder = messageDecoder;
             _messageEncoder = messageEncoder;
-            _logger = logger;
         }
 
         public event Action<IPEndPoint, GossipMessage> MessageReceived;
@@ -52,7 +54,7 @@ namespace GossipNet.IO
         public void Open(Func<int> broadcastTransmitCount)
         {
             _broadcasts = new BroadcastQueue(broadcastTransmitCount);
-            _client = new GossipUdpClient(_localEndPoint, DatagramReceived, _logger);
+            _client = new GossipUdpClient(_configuration.LocalEndPoint, DatagramReceived, _configuration.Logger);
         }
 
         public void Send(IPEndPoint remoteEndPoint, GossipMessage message)
@@ -62,13 +64,13 @@ namespace GossipNet.IO
             {
                 try
                 {
-                    _logger.Verbose("Sending {@Message} to {RemoteEndPoint}", message, remoteEndPoint);
+                    _configuration.Logger.Verbose("Sending {@Message} to {RemoteEndPoint}", message, remoteEndPoint);
                     _messageEncoder.Encode(message, ms);
 
                     List<byte[]> messageBytes = null;
                     foreach (var broadcast in _broadcasts.GetBroadcasts(0, 4096))
                     {
-                        _logger.Verbose("Piggybacking {@Message} to {RemoteEndPoint}", broadcast.Message, remoteEndPoint);
+                        _configuration.Logger.Verbose("Piggybacking {@Message} to {RemoteEndPoint}", broadcast.Message, remoteEndPoint);
                         if (messageBytes == null)
                         {
                             messageBytes = new List<byte[]>();
@@ -86,16 +88,16 @@ namespace GossipNet.IO
                         _messageEncoder.Encode(message, ms);
                     }
 
-                    if(true) // UseCompression
+                    if(_configuration.CompressionType.HasValue)
                     {
-                        message = new CompressedMessage(CompressionType.Deflate, message);
+                        message = new CompressedMessage(_configuration.CompressionType.Value, message);
                         ms.SetLength(0);
                         _messageEncoder.Encode(message, ms);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Unable to encode {@Message} for {RemoteEndPoint}.", message, remoteEndPoint);
+                    _configuration.Logger.Error(ex, "Unable to encode {@Message} for {RemoteEndPoint}.", message, remoteEndPoint);
                     return;
                 }
 
@@ -119,14 +121,14 @@ namespace GossipNet.IO
                             }
                             catch (Exception ex)
                             {
-                                _logger.Error(ex, "Error occured in MessageReceived handler for {Message} from {RemoteEndPoint}.", message, remoteEndPoint);
+                                _configuration.Logger.Error(ex, "Error occured in MessageReceived handler for {Message} from {RemoteEndPoint}.", message, remoteEndPoint);
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Unable to decode message from {RemoteEndPoint}.", remoteEndPoint);
+                    _configuration.Logger.Error(ex, "Unable to decode message from {RemoteEndPoint}.", remoteEndPoint);
                     return;
                 }
             }

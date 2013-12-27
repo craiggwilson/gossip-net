@@ -34,11 +34,9 @@ namespace GossipNet.Console
             var config = GossipNodeConfiguration.Create(x =>
             {
                 x.LocalEndPoint = new IPEndPoint(IPAddress.Loopback, port);
-                x.Logger = new LoggerConfiguration()
-                    .Destructure.AsScalar<IPEndPoint>()
+                x.LoggerConfiguration = new LoggerConfiguration()
                     .MinimumLevel.Verbose()
-                    .WriteTo.ColoredConsole()
-                    .CreateLogger();
+                    .WriteTo.ColoredConsole();
             });
 
             var node = new LocalGossipNode(config);

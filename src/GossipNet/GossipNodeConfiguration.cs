@@ -11,6 +11,20 @@ namespace GossipNet
 {
     public class GossipNodeConfiguration
     {
+        
+        private GossipNodeConfiguration(Builder builder)
+        {
+            CompressionType = builder.CompressionType;
+            LocalEndPoint = builder.LocalEndPoint;
+            Logger = (builder.LoggerConfiguration ?? new LoggerConfiguration())
+                .Destructure.AsScalar<IPEndPoint>()
+                .CreateLogger();
+            Metadata = builder.Metadata;
+            Name = builder.Name ?? LocalEndPoint.ToString();
+        }
+
+        public CompressionType? CompressionType { get; private set; }
+
         public IPEndPoint LocalEndPoint { get; private set; }
 
         public ILogger Logger { get; private set; }
@@ -18,14 +32,6 @@ namespace GossipNet
         public byte[] Metadata { get; private set; }
 
         public string Name { get; private set; }
-
-        private GossipNodeConfiguration(Builder builder)
-        {
-            LocalEndPoint = builder.LocalEndPoint;
-            Logger = builder.Logger;
-            Metadata = builder.Metadata;
-            Name = builder.Name ?? LocalEndPoint.ToString();
-        }
 
         public static GossipNodeConfiguration Create(Action<Builder> configure)
         {
@@ -36,15 +42,11 @@ namespace GossipNet
 
         public class Builder
         {
-            public Builder()
-            {
-                var encoderDecoder = new GossipMessageCodec();
-                Logger = new LoggerConfiguration().CreateLogger();
-            }
+            public CompressionType? CompressionType { get; set; }
 
             public IPEndPoint LocalEndPoint { get; set; }
 
-            public ILogger Logger { get; set; }
+            public LoggerConfiguration LoggerConfiguration { get; set; }
 
             public byte[] Metadata { get; set; }
 

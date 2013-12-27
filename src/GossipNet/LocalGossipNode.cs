@@ -28,15 +28,14 @@ namespace GossipNet
             _configuration.Logger.Information("Started {Name} at {LocalEndPoint}", configuration.Name, configuration.LocalEndPoint);
 
             var codec = new GossipMessageCodec();
-            _messagePump = new GossipMessagePump(configuration.LocalEndPoint, 
-                codec, 
-                codec, 
-                configuration.Logger);
+            _messagePump = new GossipMessagePump(configuration,
+                codec,
+                codec);
 
             _messagePump.MessageReceived += OnMessageReceived;
 
-            // number of retransmits allowed
             _messagePump.Open(GetRetransmitCount);
+
             SetAlive();
         }
 
