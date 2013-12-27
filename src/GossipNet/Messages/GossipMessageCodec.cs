@@ -116,6 +116,11 @@ namespace GossipNet.Messages
                     {
                         return Decode(gzipStream);
                     }
+                case CompressionType.Deflate:
+                    using(var deflateStream = new DeflateStream(reader.BaseStream, CompressionMode.Decompress, true))
+                    {
+                        return Decode(deflateStream);
+                    }
                 default:
                     throw new NotSupportedException();
             }
@@ -166,6 +171,12 @@ namespace GossipNet.Messages
                     using(var gzipStream = new GZipStream(writer.BaseStream, CompressionLevel.Optimal, true))
                     {
                         Encode(compressedMessage.Message, gzipStream);
+                    }
+                    break;
+                case CompressionType.Deflate:
+                    using (var deflateStream = new DeflateStream(writer.BaseStream, CompressionLevel.Optimal, true))
+                    {
+                        Encode(compressedMessage.Message, deflateStream);
                     }
                     break;
                 default:

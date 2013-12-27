@@ -88,7 +88,7 @@ namespace GossipNet.IO
 
                     if(true) // UseCompression
                     {
-                        message = new CompressedMessage(CompressionType.Gzip, message);
+                        message = new CompressedMessage(CompressionType.Deflate, message);
                         ms.SetLength(0);
                         _messageEncoder.Encode(message, ms);
                     }

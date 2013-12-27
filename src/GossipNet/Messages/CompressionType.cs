@@ -8,6 +8,7 @@ namespace GossipNet.Messages
 {
     public enum CompressionType : byte
     {
-        Gzip = 0
+        Deflate = 0,
+        Gzip = 1
     }
 }
