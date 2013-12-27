@@ -38,6 +38,9 @@ namespace GossipNet.Messages
                     case GossipMessageType.Alive:
                         EncodeAlive((AliveMessage)message, writer);
                         break;
+                    case GossipMessageType.Dead:
+                        EncodeDead((DeadMessage)message, writer);
+                        break;
                     case GossipMessageType.Ping:
                         EncodePing((PingMessage)message, writer);
                         break;
@@ -62,6 +65,8 @@ namespace GossipNet.Messages
                     return new[] { DecodeAck(reader) };
                 case GossipMessageType.Alive:
                     return new[] { DecodeAlive(reader) };
+                case GossipMessageType.Dead:
+                    return new[] { DecodeDead(reader) };
                 case GossipMessageType.Ping:
                     return new[] { DecodePing(reader) };
                 default:
@@ -126,6 +131,13 @@ namespace GossipNet.Messages
             }
         }
 
+        private DeadMessage DecodeDead(BinaryReader reader)
+        {
+            var name = reader.ReadString();
+            var incarnation = reader.ReadInt32();
+            return new DeadMessage(name, incarnation);
+        }
+
         private PingMessage DecodePing(BinaryReader reader)
         {
             var sequenceNumber = reader.ReadInt32();
@@ -182,6 +194,12 @@ namespace GossipNet.Messages
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        private void EncodeDead(DeadMessage message, BinaryWriter writer)
+        {
+            writer.Write(message.Name);
+            writer.Write(message.Incarnation);
         }
 
         private void EncodePing(PingMessage message, BinaryWriter writer)

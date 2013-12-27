@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 
@@ -50,7 +51,7 @@ namespace GossipNet.Console
             }
 
             System.Console.ReadKey();
-            node.LeaveCluster();
+            node.LeaveCluster(Timeout.InfiniteTimeSpan);
             node.Dispose();
         }
     }

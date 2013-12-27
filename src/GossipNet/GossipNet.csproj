@@ -56,8 +56,8 @@
     <Compile Include="Messages\CompressedMessage.cs" />
     <Compile Include="Messages\CompressionType.cs" />
     <Compile Include="Messages\DeadMessage.cs" />
+    <Compile Include="Support\DelegateKeyedCollection.cs" />
     <Compile Include="Support\PriorityQueue.cs" />
-    <Compile Include="GossipNodeCollection.cs" />
     <Compile Include="GossipNodeConfiguration.cs" />
     <Compile Include="GossipNodeState.cs" />
     <Compile Include="IO\IGossipMessageSender.cs" />
@@ -72,7 +72,6 @@
     <Compile Include="Messages\GossipMessageCodec.cs" />
     <Compile Include="Messages\GossipMessageType.cs" />
     <Compile Include="Messages\PingMessage.cs" />
-    <Compile Include="Support\ListMap.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

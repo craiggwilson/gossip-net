@@ -11,17 +11,19 @@ namespace GossipNet
 {
     public class GossipNodeConfiguration
     {
-        
         private GossipNodeConfiguration(Builder builder)
         {
+            BroadcastFrequency = builder.BroadcastFrequency ?? TimeSpan.FromSeconds(2);
             CompressionType = builder.CompressionType;
-            LocalEndPoint = builder.LocalEndPoint;
+            LocalEndPoint = builder.LocalEndPoint ?? new IPEndPoint(IPAddress.Loopback, 29803);
             Logger = (builder.LoggerConfiguration ?? new LoggerConfiguration())
                 .Destructure.AsScalar<IPEndPoint>()
                 .CreateLogger();
             Metadata = builder.Metadata;
             Name = builder.Name ?? LocalEndPoint.ToString();
         }
+
+        public TimeSpan BroadcastFrequency { get; private set; }
 
         public CompressionType? CompressionType { get; private set; }
 
@@ -42,6 +44,8 @@ namespace GossipNet
 
         public class Builder
         {
+            public TimeSpan? BroadcastFrequency { get; set; }
+
             public CompressionType? CompressionType { get; set; }
 
             public IPEndPoint LocalEndPoint { get; set; }

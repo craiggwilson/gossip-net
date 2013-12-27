@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using GossipNet.Messages;
 using Serilog;
@@ -24,7 +25,7 @@ namespace GossipNet.IO
         {
             Debug.Assert(configuration != null);
             Debug.Assert(messageDecoder != null);
-            Debug.Assert(messageEncoder!= null);
+            Debug.Assert(messageEncoder != null);
 
             _configuration = configuration;
             _messageDecoder = messageDecoder;
@@ -33,8 +34,10 @@ namespace GossipNet.IO
 
         public event Action<IPEndPoint, GossipMessage> MessageReceived;
 
-        public void Broadcast(BroadcastableMessage message)
+        public void Broadcast(BroadcastableMessage message, EventWaitHandle @event)
         {
+            Debug.Assert(message != null);
+
             byte[] messageBytes;
             using (var ms = new MemoryStream())
             {
@@ -42,7 +45,7 @@ namespace GossipNet.IO
                 messageBytes = ms.ToArray();
             }
 
-            var broadcast = new Broadcast(message, messageBytes);
+            var broadcast = new Broadcast(message, messageBytes, @event);
             _broadcasts.Enqueue(broadcast);
         }
 
@@ -53,13 +56,18 @@ namespace GossipNet.IO
 
         public void Open(Func<int> broadcastTransmitCount)
         {
+            Debug.Assert(broadcastTransmitCount != null);
+
             _broadcasts = new BroadcastQueue(broadcastTransmitCount);
             _client = new GossipUdpClient(_configuration.LocalEndPoint, DatagramReceived, _configuration.Logger);
         }
 
         public void Send(IPEndPoint remoteEndPoint, GossipMessage message)
         {
-            // perhaps compression should happen here...
+            Debug.Assert(remoteEndPoint != null);
+            Debug.Assert(message != null);
+
+            List<EventWaitHandle> eventsToTrigger = null;
             using (var ms = new MemoryStream())
             {
                 try
@@ -70,7 +78,7 @@ namespace GossipNet.IO
                     List<byte[]> messageBytes = null;
                     foreach (var broadcast in _broadcasts.GetBroadcasts(0, 4096))
                     {
-                        _configuration.Logger.Verbose("Piggybacking {@Message} to {RemoteEndPoint}", broadcast.Message, remoteEndPoint);
+                        _configuration.Logger.Verbose("Sending {@Message} to {RemoteEndPoint}", broadcast.Message, remoteEndPoint);
                         if (messageBytes == null)
                         {
                             messageBytes = new List<byte[]>();
@@ -79,6 +87,16 @@ namespace GossipNet.IO
                         }
 
                         messageBytes.Add(broadcast.MessageBytes);
+
+                        if (broadcast.Event != null)
+                        {
+                            if (eventsToTrigger == null)
+                            {
+                                eventsToTrigger = new List<EventWaitHandle>();
+                            }
+
+                            eventsToTrigger.Add(broadcast.Event);
+                        }
                     }
 
                     if (messageBytes != null)
@@ -88,8 +106,9 @@ namespace GossipNet.IO
                         _messageEncoder.Encode(message, ms);
                     }
 
-                    if(_configuration.CompressionType.HasValue)
+                    if (_configuration.CompressionType.HasValue)
                     {
+                        _configuration.Logger.Verbose("Compressing {@Message} to {RemoteEndPoint} with {CompressionType}", message, remoteEndPoint, _configuration.CompressionType.Value);
                         message = new CompressedMessage(_configuration.CompressionType.Value, message);
                         ms.SetLength(0);
                         _messageEncoder.Encode(message, ms);
@@ -97,11 +116,19 @@ namespace GossipNet.IO
                 }
                 catch (Exception ex)
                 {
-                    _configuration.Logger.Error(ex, "Unable to encode {@Message} for {RemoteEndPoint}.", message, remoteEndPoint);
+                    _configuration.Logger.Error(ex, "Unable to send message(s) to {RemoteEndPoint}.", remoteEndPoint);
                     return;
                 }
 
                 _client.Send(remoteEndPoint, ms.ToArray());
+
+                if (eventsToTrigger != null)
+                {
+                    foreach (var @event in eventsToTrigger)
+                    {
+                        @event.Set();
+                    }
+                }
             }
         }
 
