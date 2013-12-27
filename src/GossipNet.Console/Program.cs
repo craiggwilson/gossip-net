@@ -16,12 +16,12 @@ namespace GossipNet.Console
             if(Debugger.IsAttached)
             {
                 // running inside VS
-                args = new[] { "20000", "30000" };
+                args = new[] { "20000" };
             }
 
             if (args.Length == 0)
             {
-                args = new[] { "30000" };
+                args = new[] { "30000", "20000" };
             }
 
             var port = int.Parse(args[0]);

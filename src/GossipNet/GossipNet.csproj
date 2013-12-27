@@ -52,7 +52,7 @@
     <Compile Include="IO\BroadcastQueue.cs" />
     <Compile Include="LocalGossipNode.cs" />
     <Compile Include="Messages\BroadcastableMessage.cs" />
-    <Compile Include="Messages\RawMessage.cs" />
+    <Compile Include="Messages\CompoundMessage.cs" />
     <Compile Include="Messages\DeadMessage.cs" />
     <Compile Include="Support\PriorityQueue.cs" />
     <Compile Include="GossipNodeCollection.cs" />

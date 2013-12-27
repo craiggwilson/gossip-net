@@ -34,7 +34,7 @@ namespace GossipNet.IO
         public void Broadcast(BroadcastableMessage message)
         {
             byte[] messageBytes;
-            using(var ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             {
                 _messageEncoder.Encode(message, ms);
                 messageBytes = ms.ToArray();
@@ -61,14 +61,28 @@ namespace GossipNet.IO
             {
                 try
                 {
+                    _logger.Verbose("Sending {@Message} to {RemoteEndPoint}", message, remoteEndPoint);
                     _messageEncoder.Encode(message, ms);
 
-                    _logger.Verbose("Sending {@Message} to {RemoteEndPoint}", message, remoteEndPoint);
-                    
-                    foreach(var broadcast in _broadcasts.GetBroadcasts(0, 4096))
+                    List<byte[]> messageBytes = null;
+                    foreach (var broadcast in _broadcasts.GetBroadcasts(0, 4096))
                     {
                         _logger.Verbose("Piggybacking {@Message} to {RemoteEndPoint}", broadcast.Message, remoteEndPoint);
-                        _messageEncoder.Encode(new RawMessage(broadcast.MessageBytes), ms);
+                        if (messageBytes == null)
+                        {
+                            messageBytes = new List<byte[]>();
+                            messageBytes.Add(ms.ToArray());
+                            ms.SetLength(0);
+                        }
+
+                        messageBytes.Add(broadcast.MessageBytes);
+                    }
+
+                    if (messageBytes != null)
+                    {
+                        var compoundMessage = new CompoundMessage(messageBytes);
+                        ms.SetLength(0);
+                        _messageEncoder.Encode(compoundMessage, ms);
                     }
                 }
                 catch (Exception ex)
@@ -87,16 +101,15 @@ namespace GossipNet.IO
             {
                 try
                 {
-                    while (ms.Position < ms.Length)
+                    foreach (var message in _messageDecoder.Decode(ms))
                     {
-                        var message = _messageDecoder.Decode(ms);
                         if (MessageReceived != null)
                         {
                             try
                             {
                                 MessageReceived(remoteEndPoint, message);
                             }
-                            catch(Exception ex)
+                            catch (Exception ex)
                             {
                                 _logger.Error(ex, "Error occured in MessageReceived handler for {Message} from {RemoteEndPoint}.", message, remoteEndPoint);
                             }
@@ -156,7 +169,7 @@ namespace GossipNet.IO
                 {
                     // thrown when the client is closed...
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger.Warning(ex, "Error occured in udp client EndReceive. Ignoring and moving on.");
                 }

@@ -8,8 +8,11 @@ namespace GossipNet.Messages
 {
     public enum GossipMessageType : byte
     {
-        Raw,
-        Ping,
+        Compound = 1,
+        Compressed,
+        Encrypted,
+
+        Ping = 10,
         Ack,
         Alive,
         Suspect,

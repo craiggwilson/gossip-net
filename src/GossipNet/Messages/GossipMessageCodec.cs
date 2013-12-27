@@ -10,24 +10,11 @@ namespace GossipNet.Messages
 {
     public class GossipMessageCodec : IGossipMessageEncoder, IGossipMessageDecoder
     {
-        public GossipMessage Decode(Stream stream)
+        public IEnumerable<GossipMessage> Decode(Stream stream)
         {
             using(var reader = new BinaryReader(stream, Encoding.UTF8, true))
             {
-                // first byte has message type
-                var messageType = (GossipMessageType)stream.ReadByte();
-
-                switch(messageType)
-                {
-                    case GossipMessageType.Ack:
-                        return DecodeAck(reader);
-                    case GossipMessageType.Alive:
-                        return DecodeAlive(reader);
-                    case GossipMessageType.Ping:
-                        return DecodePing(reader);
-                    default:
-                        throw new NotSupportedException();
-                }
+                return Decode(reader);
             }
         }
 
@@ -35,15 +22,12 @@ namespace GossipNet.Messages
         {
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
-                if(message.MessageType == GossipMessageType.Raw)
-                {
-                    writer.Write(((RawMessage)message).Bytes);
-                    return;
-                }
-
                 writer.Write((byte)message.MessageType);
                 switch (message.MessageType)
                 {
+                    case GossipMessageType.Compound:
+                        EncodeCompound((CompoundMessage)message, writer);
+                        break;
                     case GossipMessageType.Ack:
                         EncodeAck((AckMessage)message, writer);
                         break;
@@ -56,6 +40,26 @@ namespace GossipNet.Messages
                     default:
                         throw new NotSupportedException();
                 }
+            }
+        }
+
+        private IEnumerable<GossipMessage> Decode(BinaryReader reader)
+        {
+            // first byte has message type
+            var messageType = (GossipMessageType)reader.ReadByte();
+
+            switch (messageType)
+            {
+                case GossipMessageType.Compound:
+                    return DecodeCompound(reader);
+                case GossipMessageType.Ack:
+                    return new[] { DecodeAck(reader) };
+                case GossipMessageType.Alive:
+                    return new[] { DecodeAlive(reader) };
+                case GossipMessageType.Ping:
+                    return new[] { DecodePing(reader) };
+                default:
+                    throw new NotSupportedException();
             }
         }
 
@@ -83,6 +87,19 @@ namespace GossipNet.Messages
             return new AliveMessage(name, ipEndPoint, meta, incarnation);
         }
 
+        private IEnumerable<GossipMessage> DecodeCompound(BinaryReader reader)
+        {
+            var messages = new List<GossipMessage>();
+            var numMessages = reader.ReadInt32();
+            for(int i = 0; i < numMessages; i++)
+            {
+                // TODO: read each message length?
+                messages.AddRange(Decode(reader));
+            }
+
+            return messages;
+        }
+
         private PingMessage DecodePing(BinaryReader reader)
         {
             var sequenceNumber = reader.ReadInt32();
@@ -107,6 +124,16 @@ namespace GossipNet.Messages
                 writer.Write(message.Metadata);
             }
             writer.Write(message.Incarnation);
+        }
+
+        private void EncodeCompound(CompoundMessage message, BinaryWriter writer)
+        {
+            writer.Write(message.Messages.Count);
+            foreach(var msg in message.Messages)
+            {
+                // TODO: write each message length?
+                writer.Write(msg);
+            }
         }
 
         private void EncodePing(PingMessage message, BinaryWriter writer)
