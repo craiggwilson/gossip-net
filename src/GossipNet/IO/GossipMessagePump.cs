@@ -57,6 +57,7 @@ namespace GossipNet.IO
 
         public void Send(IPEndPoint remoteEndPoint, GossipMessage message)
         {
+            // perhaps compression should happen here...
             using (var ms = new MemoryStream())
             {
                 try
@@ -80,9 +81,16 @@ namespace GossipNet.IO
 
                     if (messageBytes != null)
                     {
-                        var compoundMessage = new CompoundMessage(messageBytes);
+                        message = new CompoundMessage(messageBytes);
                         ms.SetLength(0);
-                        _messageEncoder.Encode(compoundMessage, ms);
+                        _messageEncoder.Encode(message, ms);
+                    }
+
+                    if(true) // UseCompression
+                    {
+                        message = new CompressedMessage(CompressionType.Gzip, message);
+                        ms.SetLength(0);
+                        _messageEncoder.Encode(message, ms);
                     }
                 }
                 catch (Exception ex)

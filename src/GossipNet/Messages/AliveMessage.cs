@@ -24,21 +24,23 @@ namespace GossipNet.Messages
 
         public IPEndPoint IPEndPoint { get; private set; }
 
-        public override GossipMessageType MessageType
-        {
-            get { return GossipMessageType.Alive; }
-        }
-
         public byte[] Metadata { get; private set; }
 
         public string Name { get; private set; }
 
+        public override GossipMessageType Type
+        {
+            get { return GossipMessageType.Alive; }
+        }
+
         public override bool Invalidates(BroadcastableMessage other)
         {
-            switch(other.MessageType)
+            switch(other.Type)
             {
                 case GossipMessageType.Alive:
                     return ((AliveMessage)other).Name == Name;
+                case GossipMessageType.Dead:
+                    return ((DeadMessage)other).Name == Name;
                 default:
                     return false;
             }

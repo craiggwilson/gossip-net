@@ -105,7 +105,7 @@ namespace GossipNet
         private void OnMessageReceived(IPEndPoint remoteEndPoint, GossipMessage message)
         {
             _configuration.Logger.Verbose("Received {@Message} from {RemoteEndPoint}", message, remoteEndPoint);
-            switch (message.MessageType)
+            switch (message.Type)
             {
                 case GossipMessageType.Ping:
                     HandlePing(remoteEndPoint, (PingMessage)message);

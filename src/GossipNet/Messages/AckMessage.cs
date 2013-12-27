@@ -13,11 +13,11 @@ namespace GossipNet.Messages
             SequenceNumber = sequenceNumber;
         }
 
-        public override GossipMessageType MessageType
+        public int SequenceNumber { get; private set; }
+
+        public override GossipMessageType Type
         {
             get { return GossipMessageType.Ack; }
         }
-
-        public int SequenceNumber { get; private set; }
     }
 }

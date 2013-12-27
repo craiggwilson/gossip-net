@@ -16,16 +16,24 @@ namespace GossipNet.Messages
 
         public int Incarnation { get; private set; }
 
-        public override GossipMessageType MessageType
+        public string Name { get; private set; }
+
+        public override GossipMessageType Type
         {
             get { return GossipMessageType.Dead; }
         }
 
-        public string Name { get; private set; }
-
         public override bool Invalidates(BroadcastableMessage other)
         {
-            throw new NotImplementedException();
+            switch (other.Type)
+            {
+                case GossipMessageType.Alive:
+                    return ((AliveMessage)other).Name == Name;
+                case GossipMessageType.Dead:
+                    return ((DeadMessage)other).Name == Name;
+                default:
+                    return false;
+            }
         }
     }
 }

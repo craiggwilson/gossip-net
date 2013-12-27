@@ -8,16 +8,16 @@ namespace GossipNet.Messages
 {
     public class CompoundMessage : GossipMessage
     {
-        public CompoundMessage(IEnumerable<byte[]> bytes)
+        public CompoundMessage(IEnumerable<byte[]> encodedMessages)
         {
-            Messages = bytes.ToList().AsReadOnly();
+            EncodedMessages = encodedMessages.ToList().AsReadOnly();
         }
 
-        public override GossipMessageType MessageType
+        public IReadOnlyList<byte[]> EncodedMessages { get; private set; }
+
+        public override GossipMessageType Type
         {
             get { return GossipMessageType.Compound; }
         }
-
-        public IReadOnlyList<byte[]> Messages { get; private set; }
     }
 }

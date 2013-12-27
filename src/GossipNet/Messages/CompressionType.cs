@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Messages
 {
-    public abstract class GossipMessage
+    public enum CompressionType : byte
     {
-        public abstract GossipMessageType Type { get; }
+        Gzip = 0
     }
 }

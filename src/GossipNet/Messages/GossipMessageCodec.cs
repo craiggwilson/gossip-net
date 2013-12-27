@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -22,11 +23,14 @@ namespace GossipNet.Messages
         {
             using (var writer = new BinaryWriter(stream, Encoding.UTF8, true))
             {
-                writer.Write((byte)message.MessageType);
-                switch (message.MessageType)
+                writer.Write((byte)message.Type);
+                switch (message.Type)
                 {
                     case GossipMessageType.Compound:
                         EncodeCompound((CompoundMessage)message, writer);
+                        break;
+                    case GossipMessageType.Compressed:
+                        EncodeCompressed((CompressedMessage)message, writer);
                         break;
                     case GossipMessageType.Ack:
                         EncodeAck((AckMessage)message, writer);
@@ -52,6 +56,8 @@ namespace GossipNet.Messages
             {
                 case GossipMessageType.Compound:
                     return DecodeCompound(reader);
+                case GossipMessageType.Compressed:
+                    return DecodeCompressed(reader);
                 case GossipMessageType.Ack:
                     return new[] { DecodeAck(reader) };
                 case GossipMessageType.Alive:
@@ -100,6 +106,21 @@ namespace GossipNet.Messages
             return messages;
         }
 
+        private IEnumerable<GossipMessage> DecodeCompressed(BinaryReader reader)
+        {
+            var compressionType = (CompressionType)reader.ReadByte();
+            switch(compressionType)
+            {
+                case CompressionType.Gzip:
+                    using(var gzipStream = new GZipStream(reader.BaseStream, CompressionMode.Decompress, true))
+                    {
+                        return Decode(gzipStream);
+                    }
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
         private PingMessage DecodePing(BinaryReader reader)
         {
             var sequenceNumber = reader.ReadInt32();
@@ -128,11 +149,27 @@ namespace GossipNet.Messages
 
         private void EncodeCompound(CompoundMessage message, BinaryWriter writer)
         {
-            writer.Write(message.Messages.Count);
-            foreach(var msg in message.Messages)
+            writer.Write(message.EncodedMessages.Count);
+            foreach(var msg in message.EncodedMessages)
             {
                 // TODO: write each message length?
                 writer.Write(msg);
+            }
+        }
+
+        private void EncodeCompressed(CompressedMessage compressedMessage, BinaryWriter writer)
+        {
+            writer.Write((byte)compressedMessage.CompressionType);
+            switch(compressedMessage.CompressionType)
+            {
+                case CompressionType.Gzip:
+                    using(var gzipStream = new GZipStream(writer.BaseStream, CompressionLevel.Optimal, true))
+                    {
+                        Encode(compressedMessage.Message, gzipStream);
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException();
             }
         }
 
