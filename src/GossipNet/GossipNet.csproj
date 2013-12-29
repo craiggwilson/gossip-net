@@ -47,6 +47,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\IGossipProtocol.cs" />
+    <Compile Include="Core\IMembershipProtocol.cs" />
+    <Compile Include="Core\Member.cs" />
+    <Compile Include="Core\MemberCodec.cs" />
+    <Compile Include="Extensions\System\Collections\Generic\EnumerableExtensions.cs" />
+    <Compile Include="Extensions\System\IO\BinaryWriterExtensions.cs" />
+    <Compile Include="Extensions\System\IO\BinaryReaderExtensions.cs" />
+    <Compile Include="Core\IMemberCodec.cs" />
+    <Compile Include="Swim\IGossipMemberSelector.cs" />
+    <Compile Include="Swim\IMessageCodec.cs" />
+    <Compile Include="Core\AbstractMemberCodec.cs" />
+    <Compile Include="Swim\RandomKGossipMemberSelector.cs" />
+    <Compile Include="Swim\Messages\AckMessage.cs" />
+    <Compile Include="Swim\Messages\AliveMessage.cs" />
+    <Compile Include="Swim\Messages\PingMessage.cs" />
+    <Compile Include="Swim\Messages\PingRequestMessage.cs" />
+    <Compile Include="Swim\SwimConfiguration.cs" />
+    <Compile Include="Swim\SwimMembershipProtocol.cs" />
     <Compile Include="GossipNode.cs" />
     <Compile Include="IO\Broadcast.cs" />
     <Compile Include="IO\BroadcastQueue.cs" />
@@ -72,6 +90,9 @@
     <Compile Include="Messages\GossipMessageCodec.cs" />
     <Compile Include="Messages\GossipMessageType.cs" />
     <Compile Include="Messages\PingMessage.cs" />
+    <Compile Include="Swim\SwimMessage.cs" />
+    <Compile Include="Swim\SwimMessageCodec.cs" />
+    <Compile Include="Swim\SwimMessageType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
