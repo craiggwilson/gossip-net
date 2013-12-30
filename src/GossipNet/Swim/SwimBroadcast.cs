@@ -4,20 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GossipNet.Messages;
 
-namespace GossipNet.IO
+namespace GossipNet.Swim
 {
-    internal class Broadcast
+    internal class SwimBroadcast
     {
-        public Broadcast(BroadcastableMessage message, byte[] messageBytes, EventWaitHandle @event)
+        public SwimBroadcast(SwimMessage message, byte[] messageBytes, EventWaitHandle @event)
         {
             Message = message;
             MessageBytes = messageBytes;
             Event = @event;
         }
 
-        public BroadcastableMessage Message { get; private set; }
+        public SwimMessage Message { get; private set; }
 
         public byte[] MessageBytes { get; private set; }
 

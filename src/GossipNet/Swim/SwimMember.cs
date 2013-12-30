@@ -6,21 +6,21 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GossipNet.Core
+namespace GossipNet.Swim
 {
-    public class Member
+    public class SwimMember
     {
-        public Member(string name, IPEndPoint endPoint)
+        public SwimMember(string id, IPEndPoint endPoint)
         {
-            Debug.Assert(name != null);
+            Debug.Assert(id != null);
             Debug.Assert(endPoint != null);
 
-            Name = name;
+            Id = id;
             EndPoint = endPoint;
         }
 
-        public string Name { get; private set; }
-
         public IPEndPoint EndPoint { get; private set; }
+
+        public string Id { get; private set; }
     }
 }

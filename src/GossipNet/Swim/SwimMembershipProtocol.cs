@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GossipNet.Core;
 
 namespace GossipNet.Swim
 {
@@ -13,23 +12,22 @@ namespace GossipNet.Swim
     /// </summary>
     /// <typeparam name="TMember"></typeparam>
     /// <remarks>http://www.cs.cornell.edu/~asdas/research/dsn02-swim.pdf</remarks>
-    public class SwimMembershipProtocol<TMember> : IMembershipProtocol<SwimMessage, TMember> 
-        where TMember : Member
+    public class SwimMembershipProtocol
     {
-        private readonly SwimConfiguration<TMember> _config;
+        private readonly SwimConfiguration _config;
 
-        public SwimMembershipProtocol(SwimConfiguration<TMember> config)
+        public SwimMembershipProtocol(SwimConfiguration config)
         {
             Debug.Assert(config != null);
 
             _config = config;
         }
 
-        public event Action<TMember> MemberJoined;
+        public event Action<SwimMember> MemberJoined;
 
-        public event Action<TMember> MemberLeft;
+        public event Action<SwimMember> MemberLeft;
 
-        public IReadOnlyList<TMember> Members
+        public IReadOnlyList<SwimMember> Members
         {
             get { throw new NotImplementedException(); }
         }

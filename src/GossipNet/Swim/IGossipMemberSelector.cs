@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GossipNet.Core;
+using GossipNet.Swim;
 
 namespace GossipNet.Swim
 {
-    public interface IGossipMemberSelector<TMember> 
-        where TMember : Member
+    public interface IGossipMemberSelector
     {
-        IEnumerable<TMember> Select(IReadOnlyList<TMember> members);
+        IEnumerable<SwimMember> Select(IReadOnlyList<SwimMember> members);
     }
 }

@@ -6,23 +6,13 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using GossipNet.Core;
 using GossipNet.Swim.Messages;
 
 namespace GossipNet.Swim
 {
-    internal class SwimMessageCodec<TMember> : IMessageCodec
-        where TMember: Member
+    internal class SwimMessageCodec<TMember> : ISwimMessageCodec
+        where TMember: SwimMember
     {
-        private readonly IMemberCodec<TMember> _memberCodec;
-
-        public SwimMessageCodec(IMemberCodec<TMember> memberCodec)
-        {
-            Debug.Assert(memberCodec != null);
-
-            _memberCodec = memberCodec;
-        }
-
         public IEnumerable<SwimMessage> Decode(Stream stream)
         {
             using(var reader = new BinaryReader(stream, Encoding.UTF8, true))
@@ -55,7 +45,7 @@ namespace GossipNet.Swim
                         EncodeAck((AckMessage)message, writer);
                         break;
                     case SwimMessageType.Alive:
-                        EncodeAlive((AliveMessage<TMember>)message, writer);
+                        EncodeAlive((AliveMessage)message, writer);
                         break;
                     case SwimMessageType.Ping:
                         EncodePing((PingMessage)message, writer);
@@ -74,9 +64,16 @@ namespace GossipNet.Swim
 
         private SwimMessage DecodeAlive(BinaryReader reader)
         {
-            return new AliveMessage<TMember>(
-                _memberCodec.Decode(reader),
+            return new AliveMessage(
+                DecodeMember(reader),
                 reader.ReadInt32());
+        }
+
+        private SwimMember DecodeMember(BinaryReader reader)
+        {
+            var id = reader.ReadString();
+            var ipEndPoint = reader.ReadIPEndPoint();
+            return new SwimMember(id, ipEndPoint);
         }
 
         private SwimMessage DecodePing(BinaryReader reader)
@@ -96,10 +93,16 @@ namespace GossipNet.Swim
             writer.Write(message.SequenceNumber);
         }
 
-        private void EncodeAlive(AliveMessage<TMember> message, BinaryWriter writer)
+        private void EncodeAlive(AliveMessage message, BinaryWriter writer)
         {
-            _memberCodec.Encode(message.Member, writer);
+            EncodeMember(message.Member, writer);
             writer.Write(message.IncarnationNumber);
+        }
+
+        private void EncodeMember(SwimMember member, BinaryWriter writer)
+        {
+            writer.Write(member.Id);
+            writer.Write(member.EndPoint);
         }
 
         private void EncodePing(PingMessage message, BinaryWriter writer)

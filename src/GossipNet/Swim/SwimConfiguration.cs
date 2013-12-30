@@ -2,30 +2,41 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using GossipNet.Core;
+using Serilog;
 
 namespace GossipNet.Swim
 {
-    public class SwimConfiguration<TMember>
-        where TMember : Member
+    public class SwimConfiguration
     {
         public SwimConfiguration(Builder builder)
         {
             Debug.Assert(builder != null);
-            Debug.Assert(builder.MemberCodec != null, "The member codec cannot be null.");
 
             GossipFrequency = builder.GossipFrequency ?? TimeSpan.FromSeconds(2);
-            GossipMemberSelector = builder.GossipMemberSelector ?? new RandomKGossipMemberSelector<TMember>(2);
-            MemberCodec = builder.MemberCodec;
+            GossipMemberSelector = builder.GossipMemberSelector ?? new RandomKGossipMemberSelector(2);
+            if((LocalMember = builder.LocalMember) == null)
+            {
+                var localEndPoint = new IPEndPoint(IPAddress.Loopback, 23013);
+                LocalMember = builder.LocalMember ?? new SwimMember(localEndPoint.ToString(), localEndPoint);
+            }
+            Logger = (builder.LoggerConfiguration ?? new LoggerConfiguration())
+                .Destructure.AsScalar<IPEndPoint>()
+                .CreateLogger();
+            RetransmitCountCalculator = builder.RetransmitCountCalculator ?? (memberCount => (int)Math.Log(memberCount, 10d));
         }
 
         public TimeSpan GossipFrequency { get; private set; }
 
-        public IGossipMemberSelector<TMember> GossipMemberSelector { get; private set; }
+        public IGossipMemberSelector GossipMemberSelector { get; private set; }
 
-        public IMemberCodec<TMember> MemberCodec { get; private set; }
+        public SwimMember LocalMember { get; private set; }
+
+        public ILogger Logger { get; private set; }
+
+        public Func<int, int> RetransmitCountCalculator { get; private set; }
 
         public class Builder
         {
@@ -39,9 +50,13 @@ namespace GossipNet.Swim
             /// selecting the members to gossip with each round and is responsible
             /// for applying the `k` value in the SWIM paper.
             /// </summary>
-            public IGossipMemberSelector<TMember> GossipMemberSelector { get; set; }
+            public IGossipMemberSelector GossipMemberSelector { get; set; }
 
-            public IMemberCodec<TMember> MemberCodec { get; set; }
+            public SwimMember LocalMember { get; set; }
+
+            public LoggerConfiguration LoggerConfiguration { get; set; }
+
+            public Func<int, int> RetransmitCountCalculator { get; set; }
         }
     }
 }

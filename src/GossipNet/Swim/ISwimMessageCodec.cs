@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GossipNet.Swim
 {
-    internal interface IMessageCodec
+    internal interface ISwimMessageCodec
     {
         IEnumerable<SwimMessage> Decode(Stream stream);
 
