@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using GossipNet.Support;
+using GossipNet.Swim.Messages;
 
 namespace GossipNet.Swim
 {
@@ -15,12 +18,23 @@ namespace GossipNet.Swim
     public class SwimMembershipProtocol
     {
         private readonly SwimConfiguration _config;
+        private readonly DelegateKeyedCollection<string, SwimMember> _members;
+        private readonly ISwimMessageService _messageService;
 
         public SwimMembershipProtocol(SwimConfiguration config)
         {
             Debug.Assert(config != null);
 
             _config = config;
+
+            _members = new DelegateKeyedCollection<string, SwimMember>(x => x.Id);
+            var messageCodec = new SwimMessageCodec();
+            _messageService = new UdpSwimMessageService(
+                config, 
+                messageCodec, 
+                () => _config.RetransmitCountCalculator(_members.Count));
+
+            _messageService.MessageReceived += OnMessageReceived;
         }
 
         public event Action<SwimMember> MemberJoined;
@@ -50,6 +64,21 @@ namespace GossipNet.Swim
         public void LeaveCluster(TimeSpan timeout)
         {
             throw new NotImplementedException();
+        }
+
+        private void OnMessageReceived(ReceivedSwimMessage receivedMessage)
+        {
+            switch(receivedMessage.Message.Type)
+            {
+                case SwimMessageType.Ping:
+                    HandlePing((PingMessage)receivedMessage.Message, receivedMessage.RemoteEndPoint);
+                    return;
+            }
+        }
+
+        private void HandlePing(PingMessage message, IPEndPoint remoteEndPoint)
+        {
+            
         }
     }
 }

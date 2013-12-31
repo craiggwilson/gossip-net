@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Swim\Messages\CompositeMessage.cs" />
     <Compile Include="Swim\SwimMember.cs" />
     <Compile Include="Swim\UdpSwimMessageService.cs" />
     <Compile Include="Extensions\System\Collections\Generic\EnumerableExtensions.cs" />

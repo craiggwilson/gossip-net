@@ -9,17 +9,17 @@ namespace GossipNet.Swim
 {
     internal class SwimBroadcast
     {
-        public SwimBroadcast(SwimMessage message, byte[] messageBytes, EventWaitHandle @event)
+        public SwimBroadcast(SwimMessage message, byte[] rawMessage, EventWaitHandle waitHandle)
         {
             Message = message;
-            MessageBytes = messageBytes;
-            Event = @event;
+            RawMessage = rawMessage;
+            Event = waitHandle;
         }
+
+        public EventWaitHandle Event { get; private set; }
 
         public SwimMessage Message { get; private set; }
 
-        public byte[] MessageBytes { get; private set; }
-
-        public EventWaitHandle Event { get; private set; }
+        public byte[] RawMessage { get; private set; }
     }
 }

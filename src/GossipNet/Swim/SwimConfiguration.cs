@@ -25,6 +25,7 @@ namespace GossipNet.Swim
             Logger = (builder.LoggerConfiguration ?? new LoggerConfiguration())
                 .Destructure.AsScalar<IPEndPoint>()
                 .CreateLogger();
+            MaximumGossipMessageSize = builder.MaximumGossipMessageSize ?? 4096; // 4MB
             RetransmitCountCalculator = builder.RetransmitCountCalculator ?? (memberCount => (int)Math.Log(memberCount, 10d));
         }
 
@@ -35,6 +36,8 @@ namespace GossipNet.Swim
         public SwimMember LocalMember { get; private set; }
 
         public ILogger Logger { get; private set; }
+
+        public int MaximumGossipMessageSize { get; private set; }
 
         public Func<int, int> RetransmitCountCalculator { get; private set; }
 
@@ -55,6 +58,8 @@ namespace GossipNet.Swim
             public SwimMember LocalMember { get; set; }
 
             public LoggerConfiguration LoggerConfiguration { get; set; }
+
+            public int? MaximumGossipMessageSize { get; set; }
 
             public Func<int, int> RetransmitCountCalculator { get; set; }
         }

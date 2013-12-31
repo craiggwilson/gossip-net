@@ -10,9 +10,18 @@ using GossipNet.Swim.Messages;
 
 namespace GossipNet.Swim
 {
-    internal class SwimMessageCodec<TMember> : ISwimMessageCodec
-        where TMember: SwimMember
+    internal class SwimMessageCodec : ISwimMessageCodec
     {
+        public int CompositeMessageOverheadInBytes
+        {
+            get { return 1 + 4; } // (byte)Composite message type + (int)number of messages
+        }
+
+        public int CompositeOverheadPerMessageInBytes
+        {
+            get { return 0; }
+        }
+
         public IEnumerable<SwimMessage> Decode(Stream stream)
         {
             using(var reader = new BinaryReader(stream, Encoding.UTF8, true))
@@ -24,6 +33,8 @@ namespace GossipNet.Swim
                         return DecodeAck(reader).ToEnumerable();
                     case SwimMessageType.Alive:
                         return DecodeAlive(reader).ToEnumerable();
+                    case SwimMessageType.Composite:
+                        return DecodeComposite(reader);
                     case SwimMessageType.Ping:
                         return DecodePing(reader).ToEnumerable();
                     case SwimMessageType.PingRequest:
@@ -69,6 +80,18 @@ namespace GossipNet.Swim
                 reader.ReadInt32());
         }
 
+        private IEnumerable<SwimMessage> DecodeComposite(BinaryReader reader)
+        {
+            var list = new List<SwimMessage>();
+            var numMessages = reader.ReadInt32();
+            for(int i = 0; i < numMessages; i++)
+            {
+                list.AddRange(Decode(reader.BaseStream));
+            }
+
+            return list;
+        }
+
         private SwimMember DecodeMember(BinaryReader reader)
         {
             var id = reader.ReadString();
@@ -97,6 +120,15 @@ namespace GossipNet.Swim
         {
             EncodeMember(message.Member, writer);
             writer.Write(message.IncarnationNumber);
+        }
+
+        private void EncodeComposite(CompositeMessage message, BinaryWriter writer)
+        {
+            writer.Write(message.RawMessages.Count);
+            for(int i = 0 ; i < message.RawMessages.Count; i++)
+            {
+                writer.Write(message.RawMessages[i]);
+            }
         }
 
         private void EncodeMember(SwimMember member, BinaryWriter writer)

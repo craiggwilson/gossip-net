@@ -9,6 +9,10 @@ namespace GossipNet.Swim
 {
     internal interface ISwimMessageCodec
     {
+        int CompositeMessageOverheadInBytes { get; }
+
+        int CompositeOverheadPerMessageInBytes { get; }
+
         IEnumerable<SwimMessage> Decode(Stream stream);
 
         void Encode(SwimMessage message, Stream stream);

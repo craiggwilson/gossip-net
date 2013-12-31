@@ -8,6 +8,9 @@ namespace GossipNet.Swim
 {
     public enum SwimMessageType : byte
     {
+        Composite,
+        Compressed,
+
         Ping,
         Ack,
         PingRequest,

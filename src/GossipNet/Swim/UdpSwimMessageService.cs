@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GossipNet.Swim.Messages;
 using Serilog;
 
 namespace GossipNet.Swim
@@ -39,12 +40,47 @@ namespace GossipNet.Swim
 
         public void QueueForBroadcast(BroadcastableSwimMessage message, EventWaitHandle waitHandle)
         {
+            Debug.Assert(message != null);
 
+            using (var ms = new MemoryStream())
+            {
+                _messageCodec.Encode(message, ms);
+                _broadcastQueue.Enqueue(new SwimBroadcast(message, ms.ToArray(), waitHandle));
+            }
         }
 
         public void Send(SwimMember member, SwimMessage message)
         {
+            Debug.Assert(member != null);
+            Debug.Assert(message != null);
 
+            using (var ms = new MemoryStream())
+            {
+                _messageCodec.Encode(message, ms);
+
+                var availableBytes = _config.MaximumGossipMessageSize - _messageCodec.CompositeMessageOverheadInBytes - (int)ms.Length;
+
+                List<byte[]> rawMessages = null;
+                foreach (var broadcast in _broadcastQueue.GetBroadcasts(_messageCodec.CompositeOverheadPerMessageInBytes, availableBytes))
+                {
+                    if (rawMessages == null)
+                    {
+                        rawMessages = new List<byte[]>();
+                        rawMessages.Add(ms.ToArray());
+                    }
+
+                    rawMessages.Add(broadcast.RawMessage);
+                }
+
+                if (rawMessages != null)
+                {
+                    message = new CompositeMessage(rawMessages);
+                    ms.SetLength(0);
+                    _messageCodec.Encode(message, ms);
+                }
+
+                _client.Send(member.EndPoint, ms.ToArray());
+            }
         }
 
         private void DatagramReceived(IPEndPoint remoteEndPoint, byte[] data)
@@ -77,7 +113,7 @@ namespace GossipNet.Swim
         }
 
         private class Client
-        { 
+        {
             private readonly UdpClient _client;
             private readonly ILogger _logger;
             private readonly Action<IPEndPoint, byte[]> _onReceive;

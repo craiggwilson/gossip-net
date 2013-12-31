@@ -20,7 +20,7 @@ namespace GossipNet.Swim
             _retransmitCount = retransmitCount;
         }
 
-        public IEnumerable<SwimBroadcast> GetBroadcasts(int maxBytes)
+        public IEnumerable<SwimBroadcast> GetBroadcasts(int overheadPerMessageInBytes, int maxBytes)
         {
             var broadcasts = new List<SwimBroadcast>();
             var itemsForRetransmit = new List<TransmittedBroadcast>();
@@ -30,11 +30,11 @@ namespace GossipNet.Swim
                 int accumulatedBytes = 0;
                 while (_queue.HasItems)
                 {
-                    if(accumulatedBytes + _queue.Peek().Broadcast.MessageBytes.Length < maxBytes)
+                    if(accumulatedBytes + overheadPerMessageInBytes + _queue.Peek().Broadcast.RawMessage.Length < maxBytes)
                     {
                         var item = _queue.Dequeue();
                         broadcasts.Add(item.Broadcast);
-                        accumulatedBytes += item.Broadcast.MessageBytes.Length;
+                        accumulatedBytes += item.Broadcast.RawMessage.Length;
                         if(item.RetransmitCount < retransmitCount)
                         {
                             itemsForRetransmit.Add(item);
